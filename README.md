@@ -68,6 +68,9 @@ in the `/data/web/magento2/pub/media/` directory.
 
 
 ### 6. Preconnect external domains in the HTTP header
+This pre-connects the DNS to domains that will be loaded later, after the HTML has parsed. This speeds up page loads with slow-loading external sites/scripts, by already connecting to those domains AS SOON AS the http header is sent to the browser.
+Longer explanation: https://andydavies.me/blog/2019/03/22/improving-perceived-performance-with-a-link-rel-equals-preconnect-http-header/
+
 Change the nginx config:
 
 1. Create extra file in: `/data/web/nginx` --> filename: `server.preconnect.conf`
