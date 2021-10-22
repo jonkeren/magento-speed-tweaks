@@ -67,6 +67,20 @@ in the `/data/web/magento2/pub/media/` directory.
 --> set TTL for public content to: 2629743 (1 month); save config.
 
 
+### 6. Preconnect external domains in the HTTP header
+Change the nginx config:
+
+1. Create extra file in: `/data/web/nginx` --> filename: `server.preconnect.conf`
+2. add content (set domains etc. accordingly)
+```
+add_header Link '<https://cloud.wordlift.io/>; rel=preconnect; crossorigin=anomynous; probability=1.0;';
+add_header Link '<https://connect.nosto.com/>; rel=preconnect; crossorigin=anonimous; probability=1.0;';
+add_header Link '<https://cloud.wordlift.io/app/bootstrap.js>; as=script; crossorigin=anonymous; rel=preload;';
+```
+3. save
+4. `hypernode-servicectl reload nginx`
+
+
 
 ====
 
