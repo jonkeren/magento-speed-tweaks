@@ -82,7 +82,9 @@ add_header Link '<https://cloud.wordlift.io/app/bootstrap.js>; as=script; crosso
 ```
 3. save
 4. `hypernode-servicectl reload nginx`
+
 Done.
+
 Test the header by using `curl -I https://www.example.com`.
 
 
