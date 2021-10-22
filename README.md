@@ -88,11 +88,11 @@ add_header Link '<https://cloud.wordlift.io/app/bootstrap.js>; as=script; crosso
 ====
 
 
-## Really improve things:
-- Upgrade Magento from 2.x naar 2.4.2, including ElasticSearch. ("Search_tmp table" bug); lower mysql load.
+## Improvements general:
+- Upgrade Magento from 2.x naar 2.4.x, including ElasticSearch. ("Search_tmp table" bug); lower mysql load.
 - Upgrade Template (Theme) to newest version.
-- Improve SRS import script: 1. faster, import only changed items; 2. flush *only* cache for changed items, not complete FPC
+- Improve SRS import script: faster -> import only changed items; 
+- flush *only* cache for changed items, not complete FPC
 - Remove unneeded JS and external pixels/scripts from template
-- Configure Varnish cache to use disk for FPC storage; 25GB+ (Not possible on Hypernode).
 - Configure and use Cloudflare.
 
