@@ -1,10 +1,46 @@
 # Manual for basic Magento2 speedup tweaks.
-These are instructions for Hypernode. Instructions for Hipex would be a bit different. 
-Jos
+These are instructions for Hypernode. Instructions for Hipex would be a bit different. - Jos
+
+
+### 1. enable large Mysql Thread stack on Hypernode
+This might help with making sure that large / long-running scripts won't hang. 
+One CLI command needed.
+
+`hypernode-systemctl settings mysql_enable_large_thread_stack --value True`
+
+After this, a MySQL restart is needed. Couple of minutes downtime.
+
+For background info see here: https://support.hypernode.com/en/hypernode/mysql/how-to-configure-a-large-mysql-thread-stack
 
 
 
-### 1. varnish vcl:
+
+
+### 2. Check and increase RAM usage for MySQL (innodb_buffer_pool_size)
+
+On Hypernode, mostly default settings are used for MySQL. This is sometimes OK for smaller sites. Most of the time: not optimal.
+Hypernode can and will change these settings on request per mail.
+
+#### A: check with tuning-primer
+1. login via SSH
+2. do `wget https://raw.githubusercontent.com/BMDan/tuning-primer.sh/master/tuning-primer.sh`
+3. do `chmod +x tuning-primer.sh`
+4. Run tuning-primer.sh by `./tuning-primer.sh` -- and look at the report and values.
+5. Especially look for: `join_buffer_size`, `table_open_cache`, `table_definition_cache`, `table_cache`, and `innodb_buffer_pool_size`.
+
+#### B: make note of settings and email Hypernode
+On a small database, the `innodb_buffer_pool_size` is mostly OK. On a larger database, if not large enough, swaps will occur between memory and disk.
+This value needs to be increased. A normal "rule of thumb" is that mysql memory should take up about 80% of total RAM.
+I advise that we use a mamximum of 50% of RAM, just to be sure that there is more than enough memory left for nginx, elastic, varnish, php and redis.
+1. Look at `htop` memory usage.
+![image](https://user-images.githubusercontent.com/80516148/126620340-a490ad5e-0507-4d0d-ba85-78667b544774.png)
+In this example you see that only ~10G of total 32G is used. We can safely increase RAM usage of MySQL to around 16G (if needed).
+2. In this case we can ask Hypernode to increase the setting of `innodb_buffer_pool_size` to 16G.
+
+
+
+
+### 3. varnish vcl:
 
 1. upload [the tweaked vcl file](https://github.com/JosQlicks/magento-speed-tweaks/blob/main/vcl-jhp-optimized-jos.vcl) to `/data/web/magento2`
 2. `varnishadm vcl.load mag2 /data/web/magento2/vcl-jhp-optimized-jos.vcl`
@@ -17,7 +53,8 @@ Jos
 
 
 
-### 2. nginx buffers:
+
+### 4. nginx buffers:
 
 1. Create extra file in: `/data/web/nginx` --> filename: `server.header_buffer_jos`
 2. add content:
@@ -33,7 +70,7 @@ proxy_busy_buffers_size 256k;
 
 
 
-### 3. Block bots (especially bingbot; GTFO):
+### 5. Block bots (especially bingbot; GTFO):
 
 1. Create extra file in: `/data/web/nginx` --> filename: `server.bots_goaway_jos`
 2. add content:
@@ -48,7 +85,7 @@ if ($http_user_agent ~* (360Spider|bingbot|BLEXbot|SEOKicks|Mauibot|Riddler|ltx7
 
 
 
-### 4. Optimize jpg images losslessly on server:
+### 6. Optimize jpg images losslessly on server with jpegoptim:
 in the `/data/web/magento2/pub/media/` directory.
 (except `/catalog` dir because of SRS import). This also makes jpgs load progressively in browsers.
 
@@ -56,16 +93,38 @@ in the `/data/web/magento2/pub/media/` directory.
 2. `find . -type f -not -path "./catalog/*" -not -path "./tmp/*" -not -path "./import/*" -name "*.jpg" -exec jpegoptim --all-progressive -p -t -v -P {} \;`
 3. let this run in the background. Can take a long time.
 
+### 7. Optimize PNG images losslessly on server with pngopt:
+1. `cd /data/web/magento2/pub/media/`
+2. `find -type f -iname "*.png" -exec optipng -fix -o4 -v -preserve {} \; -exec touch -m -a  {} \; -exec chmod 755 {} \;`
+3. let this run in the background. Can take a long time.
 
 
-
-### 5. magento backend settings:
+### 8. magento backend settings:
 1. stores > configuration > mirasvit > page cache warmer:
 --> "Forcibly make pages cacheable"; set: configured + set 3 checkboxes; save config.
 
 2. stores > configuration > advanced > system > full page cache: 
 --> set TTL for public content to: 2629743 (1 month); save config.
 
+### 9. Preconnect external domains in the HTTP header
+This pre-connects the DNS to domains that will be loaded later, after the HTML has parsed. This speeds up page loads with slow-loading external sites/scripts, by already connecting to those domains AS SOON AS the http header is sent to the browser.
+Longer explanation: https://andydavies.me/blog/2019/03/22/improving-perceived-performance-with-a-link-rel-equals-preconnect-http-header/
+
+Change the nginx config:
+
+1. Create extra file in: `/data/web/nginx` --> filename: `server.preconnect.conf`
+2. add content (set domains etc. accordingly)
+```
+add_header Link '<https://cloud.wordlift.io/>; rel=preconnect; crossorigin=anomynous; probability=1.0;';
+add_header Link '<https://connect.nosto.com/>; rel=preconnect; crossorigin=anonimous; probability=1.0;';
+add_header Link '<https://cloud.wordlift.io/app/bootstrap.js>; as=script; crossorigin=anonymous; rel=preload;';
+```
+3. save
+4. `hypernode-servicectl reload nginx`
+
+Done.
+
+Test the header by using `curl -I https://www.example.com`.
 
 ### 6. Preconnect external domains in the HTTP header
 This pre-connects the DNS to domains that will be loaded later, after the HTML has parsed. This speeds up page loads with slow-loading external sites/scripts, by already connecting to those domains AS SOON AS the http header is sent to the browser.
@@ -98,4 +157,6 @@ Test the header by using `curl -I https://www.example.com`.
 - flush *only* cache for changed items, not complete FPC
 - Remove unneeded JS and external pixels/scripts from template
 - Configure and use Cloudflare.
+
+
 
