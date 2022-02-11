@@ -43,8 +43,8 @@ In this example you see that only ~10G of total 32G is used. We can safely incre
 ### 3. varnish vcl:
 
 1. upload [the tweaked vcl file](https://github.com/JosQlicks/magento-speed-tweaks/blob/main/vcl-jhp-optimized-jos.vcl) to `/data/web/magento2`
-2. `varnishadm vcl.load mag2 /data/web/magento2/vcl-jhp-optimized-jos.vcl`
-3. `varnishadm vcl.use mag2`
+2. `varnishadm vcl.load jos /data/web/magento2/vcl-jhp-optimized-jos.vcl`
+3. `varnishadm vcl.use jos`
 4. `varnishadm vcl.list`  (see if new varnish vcl is used)
 5. wait 5-6 minutes (see timestamp on `/data/var/varnish/default.vcl` <-- this needs to be updated)
 6. `hypernode-servicectl restart varnish`
