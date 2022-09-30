@@ -86,16 +86,17 @@ if ($http_user_agent ~* (360Spider|bingbot|BLEXbot|SEOKicks|Mauibot|Riddler|ltx7
 
 
 ### 6. Optimize jpg images losslessly on server with jpegoptim:
-in the `/data/web/magento2/pub/media/` directory.
-(except `/catalog` dir because of SRS import). This also makes jpgs load progressively in browsers.
+in the `/data/web/magento2/pub/media/` directory, all images which have changed in the last 30 days.
+(except `/catalog`, `/tmp` and `/import` dirs because of SRS import). This also makes jpgs load progressively in browsers.
 
 1. `cd /data/web/magento2/pub/media/`
-2. `find . -type f -not -path "./catalog/*" -not -path "./tmp/*" -not -path "./import/*" -name "*.jpg" -exec jpegoptim --all-progressive -p -t -v -P {} \;`
+2. `find . -mtime -30 -type f -not -path "./catalog/*" -not -path "./tmp/*" -not -path "./import/*" -iname "*.jpg" -exec jpegoptim --all-progressive -p -t -v -P {} \;`
 3. let this run in the background. Can take a long time.
 
 ### 7. Optimize PNG images losslessly on server with pngopt:
+in the `/data/web/magento2/pub/media/` directory, all images which have changed in the last 30 days.
 1. `cd /data/web/magento2/pub/media/`
-2. `find -type f -iname "*.png" -exec optipng -fix -o4 -v -preserve {} \; -exec touch -m -a  {} \; -exec chmod 755 {} \;`
+2. `find . -mtime -30 -type f -not -path "./catalog/*" -not -path "./tmp/*" -not -path "./import/*" -iname "*.png" -exec optipng -fix -o4 -v -preserve {} \; -exec touch -m -a  {} \; -exec chmod 755 {} \;`
 3. let this run in the background. Can take a long time.
 
 
